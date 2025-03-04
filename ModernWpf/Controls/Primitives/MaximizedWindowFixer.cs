@@ -1,10 +1,12 @@
-﻿using System;
+﻿using MS.Win32;
+using Standard;
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
-using MS.Win32;
-using Standard;
+using System.Windows.Media;
 using NativeMethods = Standard.NativeMethods;
 
 namespace ModernWpf.Controls.Primitives
@@ -214,12 +216,22 @@ namespace ModernWpf.Controls.Primitives
                 return new Thickness();
             }
 
-            var dpi = _window.GetDpi();
+            double dpiScaleX, dpiScaleY;
+#if NET462_OR_NEWER
+            DpiScale dpi = VisualTreeHelper.GetDpi(_window);
+            dpiScaleX = dpi.DpiScaleX;
+            dpiScaleY = dpi.DpiScaleY;
+#else
+            Matrix transformToDevice = _hwndSource.CompositionTarget.TransformToDevice;
+            dpiScaleX = transformToDevice.M11;
+            dpiScaleY = transformToDevice.M22;
+#endif
+
             int frameWidth = NativeMethods.GetSystemMetrics(SM.CXSIZEFRAME);
             int frameHeight = NativeMethods.GetSystemMetrics(SM.CYSIZEFRAME);
             int borderPadding = NativeMethods.GetSystemMetrics(SM.CXPADDEDBORDER);
             Size borderSize = new Size(frameWidth + borderPadding, frameHeight + borderPadding);
-            Size borderSizeInDips = DpiHelper.DeviceSizeToLogical(borderSize, dpi.DpiScaleX, dpi.DpiScaleY);
+            Size borderSizeInDips = DpiHelper.DeviceSizeToLogical(borderSize, dpiScaleX, dpiScaleY);
 
             return new Thickness(borderSizeInDips.Width, borderSizeInDips.Height, borderSizeInDips.Width, borderSizeInDips.Height);
         }
